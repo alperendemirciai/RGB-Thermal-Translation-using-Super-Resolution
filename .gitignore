@@ -1,1 +1,6 @@
 labeled_rgbt_pairs
+*.pyc
+*.ipynb
+__pycache__/
+*.DS_Store
+data/
