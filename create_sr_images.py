@@ -52,8 +52,6 @@ def apply_super_resolution_to_all_images():
         output_path = os.path.join(output_dir, f"{base_name}_sr.jpg")
         sr_img_resized.save(output_path)
         print(f"Saved: {output_path}")
-        break
-
 
 if __name__ == "__main__":
     apply_super_resolution_to_all_images()
