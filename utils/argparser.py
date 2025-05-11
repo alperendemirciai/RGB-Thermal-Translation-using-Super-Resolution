@@ -15,6 +15,8 @@ def get_train_val_args():
     parser.add_argument('--thermal_type', type=str, default='thermal8', choices=['thermal8', 'thermal16'], help='Type of thermal image')
     parser.add_argument('--sr', type=bool, default=False , help='Use super-resolution')
     parser.add_argument('--save_freq', type=int, default=5, help='Frequency of saving model checkpoints')
+    parser.add_argument('--train_ratio', type=float, default=0.8, help='Train ratio for dataset split')
+    parser.add_argument('--val_ratio', type=float, default=0.1, help='Validation ratio for dataset split')
 
 
 

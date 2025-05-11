@@ -4,3 +4,4 @@ labeled_rgbt_pairs
 __pycache__/
 *.DS_Store
 data/
+outputs/

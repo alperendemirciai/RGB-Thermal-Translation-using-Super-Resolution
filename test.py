@@ -19,7 +19,7 @@ def test():
     torch.manual_seed(args.random_state)
     np.random.seed(args.random_state)
 
-    
+
     os.makedirs(args.save_dir, exist_ok=True)
 
     # Device setup
@@ -101,6 +101,23 @@ def test():
     avg_ssim = total_ssim / total_samples
 
     print(f"\nTest Results — Avg PSNR: {avg_psnr:.4f}, Avg SSIM: {avg_ssim:.4f}")
+
+    # write the test results to a file
+    with open(os.path.join(args.save_dir, "test_results", "test_results.txt"), "w") as f:
+        f.write(f"Avg PSNR: {avg_psnr:.4f}\n")
+        f.write(f"Avg SSIM: {avg_ssim:.4f}\n")
+        f.write(f"Total Samples: {total_samples}\n")
+        f.write(f"Batch Size: {args.batch_size}\n")
+        f.write(f"Random State: {args.random_state}\n")
+        f.write(f"Data Directory: {args.data}\n")
+        f.write(f"Thermal Type: {args.thermal_type}\n")
+        f.write(f"SR: {args.sr}\n")
+        f.write(f"Train Ratio: {args.train_ratio}\n")
+        f.write(f"Validation Ratio: {args.val_ratio}\n")
+        f.write(f"Generator Filters: {args.gen_filters}\n")
+        f.write(f"Upsampling Method: {args.upsampling_method}\n")
+        f.write(f"Save Directory: {args.save_dir}\n")
+        f.write(f"Checkpoint Path: {checkpoint_path}\n")
 
 
 if __name__ == "__main__":

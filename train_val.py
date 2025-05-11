@@ -23,7 +23,7 @@ def train_validate():
     args = get_train_val_args()
     torch.manual_seed(args.random_state)
     np.random.seed(args.random_state)
-    
+
     os.makedirs(args.save_dir, exist_ok=True)
 
     device = None
@@ -76,7 +76,10 @@ def train_validate():
         sr=args.sr,
         thermal_type=args.thermal_type,
         mode='train',
-        transform=transform
+        transform=transform,
+        random_state=args.random_state,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio
     )
 
     val_dataset = RGBT_Dataset(
@@ -84,7 +87,10 @@ def train_validate():
         sr=args.sr,
         thermal_type=args.thermal_type,
         mode='val',
-        transform=transform
+        transform=transform,
+        random_state=args.random_state,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio
     )
     
 
@@ -98,8 +104,10 @@ def train_validate():
         'train_disc_loss': [],
         'train_pixel_loss': [],
         'val_gen_loss': [],
+        'val_disc_loss': [],
         'val_psnr': [],
-        'val_ssim': []
+        'val_ssim': [],
+        'val_pixel_loss': []
     }
     
     # Best validation metrics
@@ -144,7 +152,7 @@ def train_validate():
             loss_pixel = criterion_pixel(gen_output, target_img)
             
             # Total loss
-            loss_G = loss_GAN + 30 * loss_pixel
+            loss_G = loss_GAN + 100 * loss_pixel
             
             loss_G.backward()
             optimizer_G.step()
@@ -206,6 +214,8 @@ def train_validate():
         val_gen_loss = 0
         val_psnr_avg = 0
         val_ssim_avg = 0
+        val_disc_loss = 0
+        val_pixel_loss = 0
         loop = tqdm(val_loader, leave=True, desc=f"Validation {epoch+1}/{args.epochs}")
         
         with torch.no_grad():
@@ -216,10 +226,6 @@ def train_validate():
                 # Determine batch size
                 batch_size = input_img.size(0)
                 
-                # Ground truths
-                patch_size = input_img.size(2) // 16
-                #valid = torch.ones(batch_size, 1, patch_size, patch_size).to(device)
-                
                 # Generate fake images
                 gen_output = generator(input_img)
                 
@@ -229,7 +235,7 @@ def train_validate():
                 fake = torch.zeros(batch_size, 1, pred_fake.size(2), pred_fake.size(3)).to(device)
                 loss_GAN = criterion_GAN(pred_fake, valid)
                 loss_pixel = criterion_pixel(gen_output, target_img)
-                loss_G = loss_GAN + 30 * loss_pixel
+                loss_G = loss_GAN + 100 * loss_pixel
                 
                 # Calculate PSNR
                 psnr_val = calculate_psnr(gen_output, target_img)
@@ -248,16 +254,22 @@ def train_validate():
                 val_gen_loss += loss_G.item() * batch_size
                 val_psnr_avg += psnr_val.item() * batch_size
                 val_ssim_avg += ssim_val.item() * batch_size
+                val_disc_loss += loss_D.item() * batch_size
+                val_pixel_loss += loss_pixel.item() * batch_size
         
         # Calculate average validation metrics
         val_gen_loss /= len(val_dataset)
         val_psnr_avg /= len(val_dataset)
         val_ssim_avg /= len(val_dataset)
+        val_disc_loss /= len(val_dataset)
+        val_pixel_loss /= len(val_dataset)
         
         # Store validation metrics
         history['val_gen_loss'].append(val_gen_loss)
         history['val_psnr'].append(val_psnr_avg)
         history['val_ssim'].append(val_ssim_avg)
+        history['val_disc_loss'].append(val_disc_loss)
+        history['val_pixel_loss'].append(val_pixel_loss)
         
         # Print epoch summary
         print(f"\nEpoch {epoch+1}/{args.epochs} Summary:")
@@ -313,37 +325,35 @@ def train_validate():
 
     os.makedirs(os.path.join(args.save_dir,"results"), exist_ok=True)
 
-    plot_metric(
+    plot_metrics(
         history['train_gen_loss'],
         history['val_gen_loss'],
         'Generator Loss',
         os.path.join(args.save_dir, "plots"),
         args.epochs
     )
-    plot_metric(
+    plot_metrics(
         history['train_pixel_loss'],
-        history['val_psnr'],
+        history['val_pixel_loss'],
         'Pixel Loss',
         os.path.join(args.save_dir, "plots"),
         args.epochs
     )
-    plot_metric(
+    plot_metrics(
         history['train_disc_loss'],
-        history['val_ssim'],
+        history['val_disc_loss'],
         'Discriminator Loss',
         os.path.join(args.save_dir, "plots"),
         args.epochs
     )
     plot_metric(
         history['val_psnr'],
-        history['val_ssim'],
         'Validation PSNR',
         os.path.join(args.save_dir, "plots"),
         args.epochs
     )
     plot_metric(
         history['val_ssim'],
-        history['val_psnr'],
         'Validation SSIM',
         os.path.join(args.save_dir, "plots"),
         args.epochs
@@ -355,6 +365,25 @@ def train_validate():
         for key, values in history.items():
             f.write(f"{key}: {values}\n")
     print(f"Training history saved to {history_file}")
+
+    # save training params to a file
+    params_file = os.path.join(args.save_dir, "training_params.txt")
+    with open(params_file, 'w') as f:
+        f.write(f"Batch Size: {args.batch_size}\n")
+        f.write(f"Learning Rate: {args.lr}\n")
+        f.write(f"Epochs: {args.epochs}\n")
+        f.write(f"Generator Filters: {args.gen_filters}\n")
+        f.write(f"Discriminator Filters: {args.disc_filters}\n")
+        f.write(f"Upsampling Method: {args.upsampling_method}\n")
+        f.write(f"Random State: {args.random_state}\n")
+        f.write(f"Train Ratio: {args.train_ratio}\n")
+        f.write(f"Validation Ratio: {args.val_ratio}\n")
+        f.write(f"Data Directory: {args.data}\n")
+        f.write(f"Thermal Type: {args.thermal_type}\n")
+        f.write(f"SR: {args.sr}\n")
+        f.write(f"Save Directory: {args.save_dir}\n")
+        f.write(f"Learning Rate {args.lr}\n")
+        print(f"Training parameters saved to {params_file}")
 
 
 if __name__ == '__main__':

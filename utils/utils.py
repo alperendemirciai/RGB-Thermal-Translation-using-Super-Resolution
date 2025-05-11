@@ -194,7 +194,7 @@ def save_some_examples(gen, val_loader, epoch, folder, device, num_samples=4, de
         plt.savefig(os.path.join(folder, f"epoch_{epoch}.png"))
         plt.close()
 
-def plot_metric(train_metric, val_metric, metric_name, folder, epoch):
+def plot_metrics(train_metric, val_metric, metric_name, folder, epoch):
     """
     Plot training and validation metrics
     
@@ -208,6 +208,29 @@ def plot_metric(train_metric, val_metric, metric_name, folder, epoch):
     plt.figure(figsize=(10, 5))
     plt.plot(train_metric, label='Train', color='blue')
     plt.plot(val_metric, label='Validation', color='orange')
+    plt.title(f"{metric_name} over Epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel(metric_name)
+    plt.legend()
+    plt.grid()
+    
+    # Save the plot
+    os.makedirs(folder, exist_ok=True)
+    plt.savefig(os.path.join(folder, f"{metric_name}_epoch_{epoch}.png"))
+    plt.close()
+
+def plot_metric(metric, metric_name, folder, epoch):
+    """
+    Plot a single metric over epochs
+    
+    Args:
+        metric: Metric values
+        metric_name: Name of the metric (e.g., 'PSNR', 'SSIM')
+        folder: Folder to save the plot
+        epoch: Current epoch number
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(metric, label=metric_name, color='blue')
     plt.title(f"{metric_name} over Epochs")
     plt.xlabel("Epoch")
     plt.ylabel(metric_name)
