@@ -57,7 +57,7 @@ def test():
 
     test_dataset = RGBT_Dataset(
         data_dir=args.data,
-        sr=args.sr,
+        color=args.sr,
         thermal_type=args.thermal_type,
         mode='test',
         transform=transform, random_state=args.random_state, train_ratio=args.train_ratio,

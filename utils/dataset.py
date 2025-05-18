@@ -11,18 +11,22 @@ from torchvision.transforms import functional as F
 
 
 class RGBT_Dataset(Dataset):
-    def __init__(self, data_dir: str, transform: transforms.Compose = None, random_state: int = 42, sr:bool = False, 
+    def __init__(self, data_dir: str, transform: transforms.Compose = None, random_state: int = 42, color:str = "color", 
                  thermal_type: str = "thermal8", train_ratio:float = 0.8, val_ratio:float = 0.1, mode:str = "train"):
+        
+
+        assert color=="color" or color=="sr_2x" or color=="sr_3x" 
+        if color not in ["color","sr_2x","sr_3x"]:
+            raise ValueError("color param must be one of ['color','sr_2x','sr_3x'] ")
         
         self.data_dir = data_dir
         self.transform = transform
         self.random_state = random_state
-        self.sr = sr
+        self.color = color
         self.thermal_type = thermal_type
 
         self.thermal_directory = os.path.join(data_dir, thermal_type)
-        self.rgb_directory = os.path.join(data_dir, "color")
-        self.sr_directory = os.path.join(data_dir, "sr")
+        self.color_directory = os.path.join(data_dir, self.color)
 
         self.mode = mode
         if self.mode not in ["train", "val", "test"]:
@@ -55,8 +59,7 @@ class RGBT_Dataset(Dataset):
             self.indexes = test_indexes
 
         self.thermal_paths = sorted(os.listdir(self.thermal_directory))
-        self.rgb_paths = sorted(os.listdir(self.rgb_directory))
-        self.sr_paths = sorted(os.listdir(self.sr_directory)) if sr else None
+        self.color_paths = sorted(os.listdir(self.color_directory))
 
     def __len__(self) -> int:
         return len(self.indexes)
@@ -73,13 +76,9 @@ class RGBT_Dataset(Dataset):
             thermal = (thermal / 65535.0).astype(np.float32)
 
         
-        if self.sr:
-            color_file_name = self.sr_paths[self.indexes[idx]]
-            color_path = os.path.join(self.sr_directory, color_file_name)
-        else:
-            color_file_name = self.rgb_paths[self.indexes[idx]]
-            color_path = os.path.join(self.rgb_directory, color_file_name)
-
+        color_file_name = self.color_paths[self.indexes[idx]]
+        color_path = os.path.join(self.color_directory, color_file_name)
+    
         color = cv2.imread(color_path, cv2.IMREAD_UNCHANGED)
         color = cv2.cvtColor(color, cv2.COLOR_BGR2RGB)
         color = np.clip(color, 0, 255)
@@ -112,7 +111,7 @@ if __name__ == "__main__":
         transforms.RandomVerticalFlip(),
     ])
 
-    dataset = RGBT_Dataset(data_dir="../labeled_rgbt_pairs", sr=False, thermal_type="thermal8", mode="train", transform=tforms)
+    dataset = RGBT_Dataset(data_dir="../labeled_rgbt_pairs", sr="color", thermal_type="thermal8", mode="train", transform=tforms)
     color, thermal = dataset[7]
 
 

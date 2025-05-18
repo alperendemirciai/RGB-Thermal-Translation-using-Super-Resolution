@@ -55,8 +55,8 @@ def train_validate():
     optimizer_G = optim.AdamW(generator.parameters(), lr=args.lr, betas=(0.5, 0.999))
     optimizer_D = optim.AdamW(discriminator.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
-    scheduler_G = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_G, T_max=args.epochs)
-    scheduler_D = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_D, T_max=args.epochs)
+    #scheduler_G = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_G, T_max=args.epochs)
+    #scheduler_D = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_D, T_max=args.epochs)
 
     
     # Loss functions
@@ -73,7 +73,7 @@ def train_validate():
 
     train_dataset = RGBT_Dataset(
         data_dir=args.data,
-        sr=args.sr,
+        color=args.sr,
         thermal_type=args.thermal_type,
         mode='train',
         transform=transform,
@@ -84,7 +84,7 @@ def train_validate():
 
     val_dataset = RGBT_Dataset(
         data_dir=args.data,
-        sr=args.sr,
+        color=args.sr,
         thermal_type=args.thermal_type,
         mode='val',
         transform=transform,
@@ -190,9 +190,7 @@ def train_validate():
             train_pixel_loss += loss_pixel.item() * batch_size
         
 
-        # Update learning rate
-        scheduler_G.step()
-        scheduler_D.step()
+        
 
 
         # Calculate average epoch losses
