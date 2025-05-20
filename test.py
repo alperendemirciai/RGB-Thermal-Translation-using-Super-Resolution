@@ -92,7 +92,7 @@ def test():
             if batch_idx == 0:
                 save_some_examples(
                     generator, test_loader, 0, 
-                    folder=os.path.join(args.save_dir, "test_results"),
+                    folder=os.path.join(args.save_dir, f"test_results_{args.sr}"),
                     device=device,
                     denorm=False
                 )
@@ -103,7 +103,7 @@ def test():
     print(f"\nTest Results — Avg PSNR: {avg_psnr:.4f}, Avg SSIM: {avg_ssim:.4f}")
 
     # write the test results to a file
-    with open(os.path.join(args.save_dir, "test_results", "test_results.txt"), "w") as f:
+    with open(os.path.join(args.save_dir, f"test_results_{args.sr}", "test_results.txt"), "w") as f:
         f.write(f"Avg PSNR: {avg_psnr:.4f}\n")
         f.write(f"Avg SSIM: {avg_ssim:.4f}\n")
         f.write(f"Total Samples: {total_samples}\n")

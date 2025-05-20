@@ -1,6 +1,10 @@
 import torch
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
+import os
+import matplotlib.pyplot as plt
+from torchvision.utils import make_grid
+import torchvision.transforms.functional as TF
 
 def calculate_psnr(img1, img2, max_val=1.0):
     """
@@ -137,20 +141,8 @@ def calculate_psnr(img1, img2, max_val=1.0):
         return float('inf')
     return 20 * torch.log10(max_val / torch.sqrt(mse))
 
+
 def save_some_examples(gen, val_loader, epoch, folder, device, num_samples=4, denorm=False):
-    """
-    Save a grid of sample outputs from the generator
-    
-    Args:
-        gen: Generator model
-        val_loader: DataLoader for validation set
-        epoch: Current epoch number
-        folder: Folder to save images
-        device: Device to run inference on
-        num_samples: Number of samples to visualize
-        denorm: Whether to denormalize images from [-1, 1] to [0, 1]
-    """
-    # Create directory if it doesn't exist
     os.makedirs(folder, exist_ok=True)
     
     x, y = next(iter(val_loader))
@@ -159,40 +151,30 @@ def save_some_examples(gen, val_loader, epoch, folder, device, num_samples=4, de
     gen.eval()
     with torch.no_grad():
         y_fake = gen(x)
-        gen.train()
-        
-        # Create grid of images
-        # Input RGB images
-        x_grid = make_grid(x, nrow=num_samples, normalize=True, value_range=(-1, 1) if denorm else None)
-        # Target IR images
-        y_grid = make_grid(y, nrow=num_samples, normalize=True, value_range=(-1, 1) if denorm else None)
-        # Generated IR images
-        y_fake_grid = make_grid(y_fake, nrow=num_samples, normalize=True, value_range=(-1, 1) if denorm else None)
-        
-        # Convert to numpy and transpose
-        x_grid = x_grid.cpu().numpy().transpose(1, 2, 0)
-        y_grid = y_grid.cpu().numpy().transpose(1, 2, 0)
-        y_fake_grid = y_fake_grid.cpu().numpy().transpose(1, 2, 0)
-        
-        # Create figure with subplots
-        fig, axs = plt.subplots(3, 1, figsize=(12, 12))
-        
-        # Plot images
-        axs[0].imshow(x_grid)
-        axs[0].set_title(f"Input RGB - Epoch {epoch}")
-        axs[0].axis('off')
-        
-        axs[1].imshow(y_grid)
-        axs[1].set_title(f"Target IR - Epoch {epoch}")
-        axs[1].axis('off')
-        
-        axs[2].imshow(y_fake_grid)
-        axs[2].set_title(f"Generated IR - Epoch {epoch}")
-        axs[2].axis('off')
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(folder, f"epoch_{epoch}.png"))
-        plt.close()
+    gen.train()
+
+    for i in range(num_samples):
+        input_img = x[i].cpu()
+        target_img = y[i].cpu()
+        pred_img = y_fake[i].cpu()
+
+        if denorm:
+            input_img = (input_img + 1) / 2
+            target_img = (target_img + 1) / 2
+            pred_img = (pred_img + 1) / 2
+
+        input_img = TF.to_pil_image(input_img)
+        target_img = TF.to_pil_image(target_img)
+        pred_img = TF.to_pil_image(pred_img)
+
+        # Create subfolder for each triplet
+        triplet_folder = os.path.join(folder, f"img{i+1}_epoch{epoch}")
+        os.makedirs(triplet_folder, exist_ok=True)
+
+        input_img.save(os.path.join(triplet_folder, "input.png"))
+        target_img.save(os.path.join(triplet_folder, "target.png"))
+        pred_img.save(os.path.join(triplet_folder, "prediction.png"))
+
 
 def plot_metrics(train_metric, val_metric, metric_name, folder, epoch):
     """
