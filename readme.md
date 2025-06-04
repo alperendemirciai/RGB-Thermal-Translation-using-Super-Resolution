@@ -48,6 +48,12 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
+Download the model weights from the link below:
+
+https://drive.google.com/drive/folders/1chQCeUN_lguLqcPKeEb7IeY0cYt0WYS_?usp=share_link 
+
+
+
 ### Dataset
 
 Prepare your dataset in the following structure:
